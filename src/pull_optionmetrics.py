@@ -80,7 +80,7 @@ def build_surface_query(
         FROM {OPTIONM_LIB}.vsurfd{year}
         WHERE secid IN ({_sql_int_list(secids)}) AND days IN ({_sql_int_list(maturities)}) AND date BETWEEN "{start_date}" AND "{end_date}"
     """
-    ## TODO: Replace `WHERE TODO` above with the three conditions the docstring
+    ## TD: Replace `WHERE TD` above with the three conditions the docstring
     ## describes. `build_price_query`, below, shows two of them on another table.
     ## Check your work, offline, with `pytest ./src/test_pull_optionmetrics.py`.
 

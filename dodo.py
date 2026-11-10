@@ -210,7 +210,7 @@ def task_latest():
     page's timestamp. The backfill is the default `doit`, over the window in
     the settings. Not in the default task list.
     """
-    ## TODO: Complete this task definition. The actions run, in order, the
+    ## TD: Complete this task definition. The actions run, in order, the
     ## settings script, the two pulls (`src/pull_es_options.py --latest`, the
     ## most recent session only, and `src/pull_fred.py`), `src/monitor.py`,
     ## and `src/build_page.py`, which rebuilds the monitor's page from the
@@ -226,12 +226,27 @@ def task_latest():
     ## `src/test_dodo.py`.
     return {
         "actions": [
-            # TODO: YOUR CODE HERE
+            "python ./src/settings.py",
+            "python ./src/pull_es_options.py --latest",
+            "python ./src/pull_fred.py",
+            "python ./src/monitor.py",
+            "python ./src/build_page.py"
         ],
         "file_dep": [
-            # TODO: YOUR CODE HERE
+            "./src/pull_es_options.py",
+            "./src/pull_fred.py",
+            "./src/monitor.py",
+            "./src/build_page.py",
+            "./src/monitor_chart.py",
+            "./src/source_status.py",
+            "./src/black_scholes.py",
+            "./src/smile.py",
+            "./src/rnd.py",
+            "./src/svix.py",
+            "./src/crash_prob.py",
+            "./src/utility_correction.py",
         ],
-        # TODO: YOUR CODE HERE
+        "uptodate": [False],
         "verbosity": 2,
     }
 
