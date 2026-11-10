@@ -78,7 +78,7 @@ def crash_probability(cdf, alpha):
     >>> round(crash_probability(cdf, 0.90), 4) < round(risk_neutral_crash_prob(cdf, 0.90), 4)
     True
     """
-    ## TODO: Implement this function as specified in the docstring above.
+    ## TD: Implement this function as specified in the docstring above.
     return float((alpha * cdf(alpha)) / (cdf.forward) - cdf.put(alpha))
 
 

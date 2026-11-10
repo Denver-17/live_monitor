@@ -72,7 +72,7 @@ def svix_squared(cdf):
     #np.append(call_input,cdf.call(R_f))
     svixx = 2 / (tau * R_f) * (np.trapezoid(np.append(cdf.put_grid[put_input],cdf.put(R_f)),np.append(cdf.grid[put_input],R_f)) + np.trapezoid(np.insert(cdf.call_grid[call_input],0,cdf.call(R_f)),np.insert(cdf.grid[call_input],0,R_f)))
     return float(svixx)
-    ## TODO: Implement this function as specified in the docstring above.
+    ## TD: Implement this function as specified in the docstring above.
     #raise NotImplementedError(
     #    "Implement svix_squared (see HOMEWORK INSTRUCTIONS at the top of this file)"
     #)
