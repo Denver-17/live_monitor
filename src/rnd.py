@@ -175,11 +175,16 @@ def risk_neutral_cdf(surface_slice, rate, n_grid=N_GRID):
             f"rate must be a decimal fraction (e.g. 0.03 for 3%), got {rate!r}"
         )
     grid, call_grid, maturity_years = priced_grid(surface_slice, rate, n_grid)
+    tau = float(surface_slice["days_to_maturity"].iloc[0])
+    #print(surface_slice)
+    #Check to make sure this is the right tau and not just the first tau
+    #surface_slice.loc('days_to_maturity')
+    #print(f"tau:{tau}")
 
-    ## TODO: Breeden-Litzenberger. Compute `q_raw`, the raw risk-neutral CDF on
+    ## TD: Breeden-Litzenberger. Compute `q_raw`, the raw risk-neutral CDF on
     ## the grid, from the slope of the call curve in the strike. The docstring
     ## above states the formula; `np.gradient(call_grid, grid)` is the slope.
-    q_raw = None
+    q_raw = 1 + np.exp(rate*tau/365)*(np.gradient(call_grid,grid))
     if q_raw is None:
         raise NotImplementedError(
             "Compute q_raw in risk_neutral_cdf (see HOMEWORK INSTRUCTIONS at the top of this file)"
