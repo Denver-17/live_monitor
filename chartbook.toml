@@ -23,7 +23,11 @@ description = "From settlement prices to the simple variance swap rate, the risk
 path = "_output/02_svix_and_crash_probability_ipynb.ipynb"
 
 
-# TODO: Register the monitor notebook, `03_daily_monitor_ipynb`, following
+[notebooks.03_daily_monitor_ipynb]
+name = "The Daily Monitor"
+description = "Monitors the live probability of a 20% crash within a month"
+path = "_output/03_daily_monitor_ipynb.ipynb"
+# TD: Register the monitor notebook, `03_daily_monitor_ipynb`, following
 # the two entries above: a name, a description, and the path of the executed
 # notebook that `doit` leaves in `_output/`.
 
@@ -52,8 +56,33 @@ which is why they, and not daily bars, feed the smile. `doit` pulls the
 window in the settings again when it changes; `doit latest` pulls the most
 recent session."""
 
+[dataframes.svix_monitor_history]
+name = "SVIX Monitor History"
+description = "One row per day monitoring the 30-day SVIX history, including the days_used (the expiry the probabilities are read from); p_star_20, p_log_20, p_power_20 (risk-neutral, log-utility, and power-utility probabilities of a 20% drop); p_star_10, p_log_10; vix (the Cboe VIX close from FRED, when available)"
+path = "_output/svix_monitor_history.csv"
+date_col = "date"
+tags = ["SVIX", "History", "Monitor"]
+pull_method = "Databento E-mini option settlement via src/pull_es_options.py and FRED via src/pull_fred.py"
+docs = """One row per trading session, oldest first; `append_history` replaces a
+session that is already present, so rerunning a day is harmless.
 
-# TODO: Register the monitor's history as `[dataframes.svix_monitor_history]`,
+- `svix_30`: SVIX at a constant 30-day horizon, in VIX units (annualized
+  volatility, %). It interpolates total variance linearly between the two
+  end-of-month expirations that bracket 30 days (`near_expiry`, `far_expiry`).
+- `svix2_near`, `svix2_far`, `svix2_30`: the annualized SVIX^2 behind it.
+- `days_used`: the expiry the crash probabilities are read from, the one
+  closest to 30 days.
+- `p_star_20`, `p_log_20`, `p_power_20`: probability of a 20% drop under
+  risk-neutral, log-utility (Martin 2017) and power-utility (gamma = 2,
+  Martin and Shi 2025) beliefs. `p_star_10`, `p_log_10` are the 10% drop.
+- `vix`: the Cboe VIX close from FRED. FRED posts it a day late, so it can
+  be blank and is filled on a later run.
+- `rate`: one-month Treasury yield (DGS1MO) as a decimal;
+  `forward_near`: the parity-implied futures price.
+
+Probabilities are fractions, not percents. Sessions where the rate or a
+bracketing expiry is unavailable are skipped, so the history can have gaps."""
+# TD: Register the monitor's history as `[dataframes.svix_monitor_history]`,
 # following the entry above. It is the CSV in `_output/` that
 # `src/monitor.py` writes, and that the deploy workflow keeps on the
 # `monitor-history` branch. Document it: a name, a description, the path,
