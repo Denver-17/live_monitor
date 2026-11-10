@@ -1,0 +1,141 @@
+diff --git a/src/01_es_options_data_ipynb.py b/src/01_es_options_data_ipynb.py
+index fbaa640..426c495 100644
+--- a/src/01_es_options_data_ipynb.py
++++ b/src/01_es_options_data_ipynb.py
+@@ -172,7 +172,7 @@ decoded
+ # %%
+ put = examples.iloc[0]
+ print(f"Read aloud: {put['symbol']} is the right to sell one {put['underlying']} future at {put['strike']:,.0f} "
+-      f"on {put['expiration']:%B %-d, %Y}.")
++      f"on {put['expiration']:%B} {put['expiration'].day}, {put['expiration']:%Y}.")
+ 
+ # %% [markdown]
+ # And this is what the table itself looks like: one row per contract per
+diff --git a/src/build_page.py b/src/build_page.py
+index c3625ef..e829f0a 100644
+--- a/src/build_page.py
++++ b/src/build_page.py
+@@ -48,6 +48,12 @@ def vol(x):
+     return "&ndash;" if pd.isna(x) else f"{x:.1f}"
+ 
+ 
++def long_date(d):
++    """'October 3, 2026': the day without a leading zero. strftime's %-d does
++    that on macOS and Linux and raises ValueError on Windows."""
++    return f"{d:%B} {d.day}, {d:%Y}"
++
++
+ def reading_text(history):
+     last = history.iloc[-1]
+     lines = [
+@@ -74,13 +80,13 @@ def build_html(history):
+     server = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
+     run_id = os.environ.get("GITHUB_RUN_ID")
+     now = datetime.now(timezone.utc)
+-    updated = f"{now:%B %-d, %Y at %H:%M} UTC"
++    updated = f"{long_date(now)} at {now:%H:%M} UTC"
+     if repo and run_id:
+         updated = f'<a href="{server}/{repo}/actions/runs/{run_id}">{updated}</a>, by a GitHub Actions run'
+     source = f' Code and history: <a href="{server}/{repo}">{escape(repo)}</a>.' if repo else ""
+     recent = history.tail(10).iloc[::-1]
+     rows = "\n".join(
+-        f"<tr><td>{r.date:%a, %b %-d, %Y}</td><td class='num'>{r.svix_30:.1f}</td><td class='num'>{vol(r.vix)}</td>"
++        f"<tr><td>{r.date:%a, %b} {r.date.day}, {r.date:%Y}</td><td class='num'>{r.svix_30:.1f}</td><td class='num'>{vol(r.vix)}</td>"
+         f"<td class='num'>{pct(r.p_star_20)}</td><td class='num'>{pct(r.p_log_20)}</td>"
+         f"<td class='num'>{pct(r.p_power_20)}</td></tr>"
+         for r in recent.itertuples()
+@@ -88,9 +94,9 @@ def build_html(history):
+     chart = make_figure(history).to_html(full_html=False, include_plotlyjs="cdn",
+                                          config={"displaylogo": False, "responsive": True})
+     return TEMPLATE.format(
+-        p_log=pct(last["p_log_20"]), svix=f"{last['svix_30']:.1f}", as_of=f"{last['date']:%B %-d, %Y}",
++        p_log=pct(last["p_log_20"]), svix=f"{last['svix_30']:.1f}", as_of=long_date(last['date']),
+         reading="".join(f"<p>{line}</p>" for line in lines),
+-        chart=chart, first=f"{history['date'].iloc[0]:%B %-d, %Y}", sessions=f"{len(history):,}", rows=rows,
++        chart=chart, first=long_date(history['date'].iloc[0]), sessions=f"{len(history):,}", rows=rows,
+         updated=updated, source=source,
+     )
+ 
+diff --git a/src/figures.py b/src/figures.py
+index d9956e7..5db6f89 100644
+--- a/src/figures.py
++++ b/src/figures.py
+@@ -53,6 +53,13 @@ def _title(text):
+     return dict(text=text, x=0, y=0.98)
+ 
+ 
++def long_date(d):
++    """'October 3, 2026': the day without a leading zero. strftime's %-d does
++    that on macOS and Linux and raises ValueError on Windows."""
++    d = pd.Timestamp(d)
++    return f"{d:%B} {d.day}, {d:%Y}"
++
++
+ # --------------------------------------------------------------------------
+ # Reading the raw data: CME symbols and the futures the options exercise into
+ # --------------------------------------------------------------------------
+@@ -120,7 +127,7 @@ def fig_futures_curve(curve, on, underlyings=()):
+     fig.update_layout(xaxis_title="Expiration (third Friday of the contract month)",
+                       yaxis_title="Price above the nearest contract (%)",
+                       legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0))
+-    return style(fig, height=440, title=_title(f"The E-mini S&P 500 futures curve, settlements of {pd.Timestamp(on):%B %-d, %Y}"),
++    return style(fig, height=440, title=_title(f"The E-mini S&P 500 futures curve, settlements of {long_date(on)}"),
+                  margin=dict(l=70, r=20, t=90, b=50))
+ 
+ 
+@@ -155,7 +162,7 @@ def fig_expiration_calendar(session, curve, on, horizon_days=smile.HORIZON_DAYS)
+     fig.update_layout(yaxis=dict(title="Underlying future", categoryorder="array", categoryarray=order),
+                       xaxis_title="Expiration date",
+                       legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0))
+-    return style(fig, height=380, title=_title(f"What expires when, as of {on:%B %-d, %Y}"),
++    return style(fig, height=380, title=_title(f"What expires when, as of {long_date(on)}"),
+                  margin=dict(l=90, r=20, t=90, b=50))
+ 
+ 
+@@ -187,7 +194,7 @@ def fig_parity(chain, forward, rate):
+                       yaxis_title="Call minus put (index points)",
+                       legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0))
+     expiry = pd.Timestamp(chain["expiration"].iloc[0])
+-    return style(fig, height=460, title=_title(f"Put-call parity, options expiring {expiry:%B %-d, %Y} ({days} days)"),
++    return style(fig, height=460, title=_title(f"Put-call parity, options expiring {long_date(expiry)} ({days} days)"),
+                  margin=dict(l=70, r=20, t=90, b=50))
+ 
+ 
+@@ -318,7 +325,7 @@ def fig_surface(options, session, date, rate):
+         xaxis_title="Strike / index level", yaxis_title="Days to expiration", zaxis_title="Implied vol (%)",
+         camera=dict(eye=dict(x=1.6, y=-1.6, z=0.9)), aspectratio=dict(x=1.2, y=1.2, z=0.7),
+     )
+-    return style(fig, height=600, title=f"The E-mini S&P 500 volatility surface, settlements of {pd.Timestamp(date):%B %-d, %Y}")
++    return style(fig, height=600, title=f"The E-mini S&P 500 volatility surface, settlements of {long_date(date)}")
+ 
+ 
+ # --------------------------------------------------------------------------
+@@ -369,7 +376,7 @@ def fig_distribution(options, session, date, rate, n_expiries=5):
+     for i, row in enumerate(expiries.itertuples()):
+         mask = [False] * n
+         mask[i * traces_per:(i + 1) * traces_per] = [True] * traces_per
+-        buttons.append(dict(label=f"{int(row.days_to_expiry)} days ({row.expiration:%b %-d})",
++        buttons.append(dict(label=f"{int(row.days_to_expiry)} days ({row.expiration:%b} {row.expiration.day})",
+                             method="update", args=[{"visible": mask}]))
+     for r in (1, 2, 3):
+         fig.add_vline(x=0.8, line_dash="dot", line_color=GREY, row=r, col=1)
+@@ -405,7 +412,7 @@ def fig_svix_weights(cdf, date):
+                       xaxis_title="Strike / index level",
+                       yaxis_title="Share of the total, per 1% band of strikes (%)")
+     days = int(round(tau * 365))
+-    return style(fig, height=500, title=_title(f"Where SVIX comes from: {days}-day E-mini options, {pd.Timestamp(date):%B %-d, %Y}"),
++    return style(fig, height=500, title=_title(f"Where SVIX comes from: {days}-day E-mini options, {long_date(date)}"),
+                  margin=dict(l=60, r=20, t=90, b=50))
+ 
+ 
+@@ -440,7 +447,7 @@ def fig_crash_beliefs(cdf, date, gammas=(1, 2, 3, 4, 5)):
+         legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0),
+     )
+     days = int(round(cdf.maturity_years * 365))
+-    return style(fig, height=560, title=_title(f"Three beliefs about a crash, {days}-day options, {pd.Timestamp(date):%B %-d, %Y}"),
++    return style(fig, height=560, title=_title(f"Three beliefs about a crash, {days}-day options, {long_date(date)}"),
+                  margin=dict(l=70, r=20, t=90, b=110))
+ 
+ 
+-- 
+2.51.2
